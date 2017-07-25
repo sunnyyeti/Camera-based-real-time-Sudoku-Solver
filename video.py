@@ -43,9 +43,9 @@ def video_test():
                         block_to_centre.setdefault(i,[]).append(centre.flatten())
                 if sum(digits_flag) >= 17: #if valid digits in the sudoku is less than 17 then we think it as invalid
                     valid = True
-                    invalid_cnt = 0
+                    invalid_cnt = 0 #如果检测到有效的，那么无效置零，因为无效我们是需要连续无效的，连续无效３次
                     valid_rec = rec
-                    if not reset and np.sum(digits_flag^cached_digits_flag)<5 and cached_solution is not None:
+                    if not reset and np.sum(digits_flag^cached_digits_flag)<5 and cached_solution is not None:#异或检测不一样的，如果小于５个不一样的，就认为成功cache到了
                         block_to_centre.clear()
                         if show_solution:
                             #print "cached!"
@@ -59,7 +59,7 @@ def video_test():
                             frame = add_rectangular(frame, valid_rec[0])
 
                         cv2.imshow('frame',frame)
-                    elif not reset:
+                    elif not reset:#有效帧，但是没有cache到，同时没有reset，我们希望reset，所谓reset就是重新计算一个新的sudoku
                         #print "reset 1"
                         reset = True
                         valid_cnt = 0
@@ -70,7 +70,7 @@ def video_test():
                     break
             if not valid:
                 invalid_cnt += 1
-                if invalid_cnt >=3:
+                if invalid_cnt >=3:#实际上累计三个无效帧就重来，因为有可能和重置相互交错
                     invalid_cnt = 3
                     reset = True
                     #print "reset 2"
@@ -83,7 +83,7 @@ def video_test():
             elif reset:
                 valid_cnt+=1
                 hist_digits_flag.append(digits_flag)
-                if valid_cnt > 10:
+                if valid_cnt > 10:#连续１０帧有效，才能确保检测到一个谜题了，如果中间有连续三帧断了那么需要重新来，valid_cnt会被打断重置成零，如果只是一帧断了那么下次还能继续。
                     #print "detected!"##continuous valid frame is larger than 10, then we think there is a valid sudoku. The reognized digits are determined by the 10 frames to reduce bias.
                     merged_digits_flag = np.sum(np.array(hist_digits_flag),axis=0).astype(np.bool)
                     #print "args true", np.argwhere(merged_digits_flag==True).flatten()
@@ -109,7 +109,7 @@ def video_test():
                     frame = reflect_to_orig(frame, rot_mat, mapped)
                     if show_border:
                         frame = add_rectangular(frame,valid_rec[0])
-                    cv2.imshow('frame', frame)
+                cv2.imshow('frame', frame)
         else:
             invalid_cnt += 1
             if invalid_cnt >= 3:
